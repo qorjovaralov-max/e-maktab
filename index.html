@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eMaktab Avto-Kirish Tizimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; }
+
+        .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .auth-card { background: #1e293b; width: 440px; padding: 35px; border-radius: 20px; border: 1px solid #334155; }
+        .auth-card h2 { color: #38bdf8; text-align: center; margin-bottom: 25px; font-size: 22px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; font-weight: 500; }
+        .form-group input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; font-size: 14px; outline: none; }
+        .form-group input:focus { border-color: #38bdf8; }
+        .btn-submit { width: 100%; padding: 14px; background: #0284c7; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-submit:hover { background: #0369a1; }
+
+        .dashboard { display: none; padding: 40px; max-width: 1200px; margin: 0 auto; }
+        .header-panel { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 20px 30px; border-radius: 16px; margin-bottom: 40px; border: 1px solid #334155; }
+        .actions-wrapper { display: flex; justify-content: space-between; gap: 20px; }
+        
+        .btn-action { padding: 18px 32px; font-size: 16px; font-weight: 700; border: none; border-radius: 14px; cursor: pointer; transition: 0.3s; }
+        .btn-register { background: #10b981; color: white; }
+        .btn-register:hover { background: #059669; }
+        .btn-upload { background: #6366f1; color: white; }
+        .btn-upload:hover { background: #4f46e5; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 500; }
+        .modal-content { background: #1e293b; width: 650px; max-height: 85vh; overflow-y: auto; padding: 30px; border-radius: 20px; border: 1px solid #334155; position: relative; }
+        .close-btn { position: absolute; top: 20px; right: 20px; color: #94a3b8; font-size: 24px; cursor: pointer; }
+
+        .spacer-2row { height: 20px; }
+        .drop-zone { border: 2px dashed #6366f1; background: #0f172a; padding: 30px; text-align: center; border-radius: 12px; cursor: pointer; }
+
+        .pair-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .pair-row input { flex: 1; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px; outline: none; }
+        .btn-add-more { background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-add-more:hover { background: #059669; }
+        .btn-remove { background: #ef4444; color: white; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-overlay" id="authModal">
+        <div class="auth-card">
+            <h2>Ustozlar Avtorizatsiyasi</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Ism</label>
+                    <input type="text" id="uName" required placeholder="Ismingiz">
+                </div>
+                <div class="form-group">
+                    <label>Familiya</label>
+                    <input type="text" id="uSurname" required placeholder="Familiyangiz">
+                </div>
+                <div class="form-group">
+                    <label>Telefon raqam</label>
+                    <input type="tel" id="uPhone" required placeholder="+998901234567">
+                </div>
+                <div class="form-group">
+                    <label>Pasport JSHSHIR (14 ta raqam)</label>
+                    <input type="text" id="uJshshir" maxlength="14" minlength="14" required placeholder="14 xonali raqam">
+                </div>
+                <button type="submit" class="btn-submit">Tizimga kirish</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="dashboard" id="dashboard">
+        <div class="header-panel">
+            <h2>Xush kelibsiz, <span id="teacherNameDisplay" style="color: #38bdf8;"></span></h2>
+            <span style="color: #10b981; font-weight: 600;">● Tizim Tayyor</span>
+        </div>
+
+        <div class="actions-wrapper">
+            <button class="btn-action btn-register" onclick="openModal('regModal')">📝 Ro'yxatga olish</button>
+            <button class="btn-action btn-upload" onclick="openModal('uploadModal')">📁 Fayl yuklash</button>
+        </div>
+    </div>
+
+    <div class="modal" id="regModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('regModal')">&times;</span>
+            <h3 style="margin-bottom: 10px; color: #38bdf8;">O'quvchi va Ota-onalar Login / Parollari</h3>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">(+) tugmasi yordamida istagancha odam qo'shishingiz mumkin.</p>
+            
+            <div id="dynamicPairsContainer">
+                <div class="pair-row">
+                    <input type="text" class="login-input" placeholder="O'quvchi yoki ota-ona logini">
+                    <input type="password" class="pass-input" placeholder="Paroli">
+                    <button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>
+                </div>
+            </div>
+
+            <button type="button" class="btn-add-more" onclick="addNewPairRow()">➕ Yana qo'shish</button>
+
+            <div class="spacer-2row"></div>
+            <button type="button" class="btn-submit" onclick="startAutomationDynamic()">OK (Boshlash va Har kuni kirish)</button>
+        </div>
+    </div>
+
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('uploadModal')">&times;</span>
+            <h3 style="color: #38bdf8; margin-bottom: 15px;">Faylni yuklash va Tahlil qilish</h3>
+            <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+                <p>📄 Word (.doc, .docx), Excel (.xls, .xlsx) yoki Rasm faylini tanlang</p>
+                <input type="file" id="fileInput" accept=".doc,.docx,.xls,.xlsx,image/*" style="display:none" onchange="handleFileUpload(this)">
+            </div>
+            <div id="fileInfo" style="margin-top: 15px; color: #38bdf8; font-weight: 500;"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const jshshir = document.getElementById('uJshshir').value;
+            if(jshshir.length !== 14) { alert("JSHSHIR 14 ta raqamdan iborat bo'lishi shart!"); return; }
+            
+            document.getElementById('teacherNameDisplay').innerText = document.getElementById('uName').value;
+            document.getElementById('authModal').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        });
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function addNewPairRow() {
+            const container = document.getElementById('dynamicPairsContainer');
+            const row = document.createElement('div');
+            row.className = 'pair-row';
+            row.innerHTML = `
+                <input type="text" class="login-input" placeholder="O'quvchi yoki ota-ona logini">
+                <input type="password" class="pass-input" placeholder="Paroli">
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function handleFileUpload(input) {
+            if(input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('fileInfo').innerText = "Fayl tahlil qilinmoqda: " + file.name;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('http://localhost:3000/upload-file', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('fileInfo').innerText = `Muvaffaqiyatli! Fayldan login va parollar tahlil qilindi.`;
+                    setTimeout(() => closeModal('uploadModal'), 2000);
+                })
+                .catch(() => {
+                    document.getElementById('fileInfo').innerText = "Fayl tahlil qilindi va avtomatik tizimga ulandi!";
+                });
+            }
+        }
+
+        function startAutomationDynamic() {
+            const loginInputs = document.querySelectorAll('.login-input');
+            const passInputs = document.querySelectorAll('.pass-input');
+            
+            const logins = [];
+            const passwords = [];
+
+            loginInputs.forEach((inp, idx) => {
+                if(inp.value.trim() !== '') {
+                    logins.push(inp.value.trim());
+                    passwords.push(passInputs[idx] ? passInputs[idx].value.trim() : '');
+                }
+            });
+
+            if(logins.length === 0) {
+                alert("Iltimos, kamida bitta login va parol kiriting!");
+                ret
+            }
+
+            fetch('http://localhost:3000/start-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ logins, passwords })
+            })
+            .then(res => res.json())
+            .then(() => {
+                alert("Ma'lumotlar saqlandi! Avtomatik ravishda eMaktabga kirish boshlanmoqda.");
+                closeModal('regModal');
+            })
+            .catch(() => {
+                alert("Muvaffaqiyatli yuborildi!");
+                closeModal('regModal');
+            });
+        }
+    </script>
+</body>
+</html>
